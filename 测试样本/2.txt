@@ -1,0 +1,2084 @@
+机器学习实战（五）——Logistic 回归
+
+
+Logistic 回归
+5.1 基于Logistic回归和Sigmoid函数的分类
+5.2 基于最优化方法的最佳回归系数确定
+5.2.1 梯度上升法
+5.3 python实战
+5.3.1 查看数据集分布情况
+5.3.2 训练
+5.3.3 绘制决策边界
+5.4 改进的随机梯度上升算法
+5.4.1 随机梯度上升算法代码：
+5.4.2 回归系数与迭代次数的关系
+5.5 示例：从疝气病症预测病马的死亡率
+5.5.1 准备数据
+5.5.2 使用python构建Logistic回归分类器
+5.6 使用sklearn构建Logistic回归分类器
+5.6.1 函数说明
+5.6.2 使用sklearn构建分类器
+5.7 Logistic算法总结
+5.7.1 优缺点
+5.8 系统介绍
+5.8.1 逻辑斯蒂分布
+5.8.2 二项逻辑回归
+5.8.3 逻辑回归的正则化
+5.8.4 为什么逻辑回归比线性回归好
+5.8.5 其他降低过拟合的方法
+5.8.6 LR和SVM的联系与区别
+Logistic 回归
+假设有一些数据点，我们用一条直线对这些点进行拟合（称为最佳拟合直线），这个拟合的过程就叫做回归。
+
+Logistic 回归的主要思想：根据现有数据对分类边界线建立回归公式，以此进行分类。
+
+回归：回归一词源于最佳拟合，表示要找到最佳拟合参数集。
+
+训练分类器：寻找最佳拟合参数，使用的是最优化算法。
+
+这里写图片描述
+
+5.1 基于Logistic回归和Sigmoid函数的分类
+这里写图片描述
+
+Logistic回归是回归的一种方法，它利用的是Sigmoid函数阈值在[0,1]这个特性。
+
+Logistic回归进行分类的主要思想是：根据现有数据对分类边界线建立回归公式，以此进行分类。其实，Logistic本质上是一个基于条件概率的判别模型(Discriminative Model)。
+
+Logistic回归的函数是sigmoid函数，公式如下： 
+δ(z)=11+e−z
+这里写图片描述
+
+不同坐标尺度下的两条曲线图，当x为0时，sigmoid函数值为0.5，随x的增大，函数值接近1，随着x的减小，函数值接近0。
+
+如何实现Logistic回归分类器：
+
+在每个特征上都乘以一个回归系数，然后将所有的结果值相加，将这个总和带入sigmoid函数中，进而得到一个范围在0~1中的数值，任何大于0.5的数据被分入1类，小于0.5的被分入0类，所以Logistic回归也可以被看成一种概率估计。
+
+确定了分类器的函数形式之后，要确定最佳回归系数
+
+5.2 基于最优化方法的最佳回归系数确定
+假设Sigmoid函数的输入记为z，由下面的公式得出：
+
+z=w0x0+w1x1+w2x2+...+wnxn
+如果采用向量的写法，上述公式可以写成z=wTx，它表示将这两个数值向量对应元素相乘然后全部加起来即得到z值，其中的向量x是分类器的输入数据，向量w也就是我们要找到的最佳参数（系数），从而使得分类器尽可能的精确，为了寻找该最佳参数，需要使用一些优化理论的知识。
+
+5.2.1 梯度上升法
+基本思想：
+
+要找到某函数的最大值，最好的方法是沿着该函数的梯度方向探寻，函数f(x,y)的梯度∇为：
+
+∇f(x,y)=⎡⎣⎢⎢∂f(x,y)∂x∂f(x,y)∂y⎤⎦⎥⎥
+梯度意味着要沿x的方向移动∂f(x,y)∂x，沿y的方向移动∂f(x,y)∂y，其中，f(x,y)必须要在待计算的点上有定义并且可微。
+
+举例如下：
+
+这里写图片描述
+
+上图中的梯度上升算法沿梯度的方向移动了一步，可以看到，梯度算子总是指向函数值增长最快的方向，移动量的大小称为步长，记作α，用向量来表示的话，梯度算法的迭代公式如下：
+
+w:=w+α∇wf(w)
+该公式一直被迭代执行，直到达到某个停止条件为止，比如迭代次数达到某个指定值或算法达到某个可以允许的误差范围。
+
+举例说明：求函数极大值
+
+"""
+函数说明：梯度上升法测试函数
+
+    求函数f(x)=-x^2 + 4x的极大值
+
+"""
+def Gradient_Ascent_test():
+    def f_prime(x_old):
+        return -2*x_old+4
+    x_old=-1
+    x_new=0
+    alpha=0.01
+    presision=0.00000001
+
+    while abs(x_new-x_old)>presision:
+        x_old=x_new
+        x_new=x_old+alpha*f_prime(x_old)
+    print(x_new)
+
+if __name__=='__main__':
+    Gradient_Ascent_test()
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+结果：
+
+1.999999515279857
+1
+结果已经很接近真实值2了，这一个过程就是梯度上升算法。
+
+5.3 python实战
+使用testSet.txt数据集，数据如下： 
+这里写图片描述
+
+该数据有两维特征，最后一列为分类标签，根据标签的不同，对其进行分类
+
+5.3.1 查看数据集分布情况
+import matplotlib.pylab as plt
+import numpy as np
+
+"""
+函数说明：加载数据
+
+"""
+def loadDataSet():
+    # 创建数据列表
+    dataMat=[]
+    # 创建标签列表
+    labelMat=[]
+    # 打开文件
+    fr=open('testSet.txt')
+    # 逐行读取
+    for line in fr.readlines():
+        # 去回车，放入列表
+        lineArr=line.strip().split()
+        # 添加数据
+        dataMat.append([1.0,float(lineArr[0]),float(lineArr[1])])
+        # 添加标签
+        labelMat.append(int(lineArr[2]))
+    # 关闭文件
+    fr.close()
+    return dataMat,labelMat
+
+"""
+函数说明：绘制数据集
+"""
+def plotDataSet():
+    #加载数据集
+    dataMat,labelMat=loadDataSet()
+    #转化成numpy的array
+    dataArr=np.array(dataMat)
+    #数据个数
+    n=np.shape(dataMat)[0]
+    #正样本
+    xcord1=[];ycord1=[]
+    #负样本
+    xcord2=[];ycord2=[]
+    #根据数据集标签进行分类
+    for i in range(n):
+        #1为正样本
+        if int(labelMat[i])==1:
+            xcord1.append(dataArr[i,1])
+            ycord1.append(dataArr[i,2])
+        #0为负样本
+        else:
+            xcord2.append(dataArr[i,1])
+            ycord2.append(dataArr[i,2])
+    fig=plt.figure()
+    #添加subplot
+    ax=fig.add_subplot(111)
+    #绘制正样本
+    ax.scatter(xcord1,ycord1,s=20,c='red',marker='s',alpha=.5)
+    #绘制负样本
+    ax.scatter(xcord2,ycord2,s=20,c='green',alpha=.5)
+
+    plt.title('DataSet')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.show()
+
+if __name__=='__main__':
+    plotDataSet()
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+结果：
+
+这里写图片描述
+
+上图为数据的分布情况，假设Sigmoid函数的输入为z，则z=w0+w1x1+w2x2，即可将数据分隔开。其中x0为全1向量，x1为数据集的第一列数据，x2为数据集的第二列数据。
+
+令z=0，则0=w0+w1x1+w2x2，横坐标为x1，纵坐标为x2，未知参数w0、w1、w2也就是需要求的回归系数。
+
+5.3.2 训练
+import matplotlib.pylab as plt
+import numpy as np
+
+"""
+函数说明：加载数据
+
+"""
+def loadDataSet():
+    # 创建数据列表
+    dataMat=[]
+    # 创建标签列表
+    labelMat=[]
+    # 打开文件
+    fr=open('testSet.txt')
+    # 逐行读取
+    for line in fr.readlines():
+        # 去回车，放入列表
+        lineArr=line.strip().split()
+        # 添加数据
+        dataMat.append([1.0,float(lineArr[0]),float(lineArr[1])])
+        # 添加标签
+        labelMat.append(int(lineArr[2]))
+    # 关闭文件
+    fr.close()
+    return dataMat,labelMat
+
+"""
+函数说明：sigmoid函数
+
+"""
+def sigmoid(inX):
+    return 1.0/(1+np.exp(-inX))
+
+
+"""
+函数说明：梯度上升算法
+
+"""
+def gradAscent(dataMatIn,classLabels):
+    #转化成numpy的mat
+    dataMatrix=np.mat(dataMatIn)
+    # 转化成numpy的mat，并进行转置
+    labelMat=np.mat(classLabels).transpose()
+    #返回dataMatrix的大小，m为行，n为列
+    m,n=np.shape(dataMatrix)
+    #移动步长，也就是学习速率，控制参数更新的速度
+    alpha=0.001
+    #最大迭代次数
+    maxCycles=500
+    weights=np.ones((n,1))
+
+    for k in range(maxCycles):
+        #梯度上升矢量化公式
+        h=sigmoid(dataMatrix*weights)
+        error=labelMat-h
+        weights=weights+alpha*dataMatrix.transpose()*error
+    #将矩阵转化为数组，并返回权重参数
+    return weights.getA()
+
+if __name__=='__main__':
+    dataMat,labelMat=loadDataSet()
+    print(gradAscent(dataMat,labelMat))
+
+
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+结果：
+
+[[ 4.12414349]
+ [ 0.48007329]
+ [-0.6168482 ]]
+1
+2
+3
+输出结果即为回归系数[w0,w1,w2]
+通过求解参数，可以确定不同类别数据之间的分割线，画出决策边界。
+
+5.3.3 绘制决策边界
+绘制边界程序如下：
+
+import matplotlib.pylab as plt
+import numpy as np
+
+"""
+函数说明：加载数据
+
+"""
+def loadDataSet():
+    # 创建数据列表
+    dataMat=[]
+    # 创建标签列表
+    labelMat=[]
+    # 打开文件
+    fr=open('testSet.txt')
+    # 逐行读取
+    for line in fr.readlines():
+        # 去回车，放入列表
+        lineArr=line.strip().split()
+        # 添加数据
+        dataMat.append([1.0,float(lineArr[0]),float(lineArr[1])])
+        # 添加标签
+        labelMat.append(int(lineArr[2]))
+    # 关闭文件
+    fr.close()
+    return dataMat,labelMat
+
+"""
+函数说明：sigmoid函数
+
+"""
+def sigmoid(inX):
+    return 1.0/(1+np.exp(-inX))
+
+
+"""
+函数说明：梯度上升算法
+
+"""
+def gradAscent(dataMatIn,classLabels):
+    #转化成numpy的mat
+    dataMatrix=np.mat(dataMatIn)
+    # 转化成numpy的mat，并进行转置
+    labelMat=np.mat(classLabels).transpose()
+    #返回dataMatrix的大小，m为行，n为列
+    m,n=np.shape(dataMatrix)
+    #移动步长，也就是学习速率，控制参数更新的速度
+    alpha=0.001
+    #最大迭代次数
+    maxCycles=500
+    weights=np.ones((n,1))
+
+    for k in range(maxCycles):
+        #梯度上升矢量化公式
+        h=sigmoid(dataMatrix*weights)
+        error=labelMat-h
+        weights=weights+alpha*dataMatrix.transpose()*error
+    #将矩阵转化为数组，并返回权重参数
+    return weights.getA()
+
+"""
+函数说明：绘制数据集
+
+"""
+def plotBestFit(weights):
+    #加载数据集
+    dataMat,labelMat=loadDataSet()
+    dataArr=np.array(dataMat)
+    #数据个数
+    n=np.shape(dataMat)[0]
+    #正样本
+    xcord1=[]
+    ycord1=[]
+    #负样本
+    xcord2=[]
+    ycord2=[]
+    #根据数据集标签进行分类
+    for i in range(n):
+        #1为正样本
+        if int(labelMat[i])==1:
+            xcord1.append(dataArr[i,1])
+            ycord1.append(dataArr[i,2])
+        #0为负样本
+        else:
+            xcord2.append(dataArr[i,1])
+            ycord2.append(dataArr[i,2])
+    fig = plt.figure()
+    # 添加subplot
+    ax = fig.add_subplot(111)
+    # 绘制正样本
+    ax.scatter(xcord1, ycord1, s=20, c='red', marker='s', alpha=.5)
+    # 绘制负样本
+    ax.scatter(xcord2, ycord2, s=20, c='green', alpha=.5)
+
+    x=np.arange(-3.0,3.0,0.1)
+
+    y=(-weights[0]-weights[1]*x)/weights[2]
+
+    ax.plot(x,y)
+
+    plt.title('BestFit')
+    plt.xlabel('X1')
+    plt.ylabel('X2')
+    plt.show()
+
+
+if __name__=='__main__':
+    dataMat,labelMat=loadDataSet()
+    weights=gradAscent(dataMat,labelMat)
+    plotBestFit(weights)
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+结果：
+
+这里写图片描述
+
+上图分类结果较为可观，但是计算量很大。
+
+总结：
+
+Logistic回归的目的是寻找一个非线性函数Sigmoid的最佳拟合参数，求解过程可以由最优化算法完成。
+
+5.4 改进的随机梯度上升算法
+假设，我们使用的数据集一共有100个样本。那么，dataMatrix就是一个100*3的矩阵。每次计算h的时候，都要计算dataMatrix*weights这个矩阵乘法运算，要进行100*3次乘法运算和100*2次加法运算。同理，更新回归系数(最优参数)weights时，也需要用到整个数据集，要进行矩阵乘法运算。总而言之，该方法处理100个左右的数据集时尚可，但如果有数十亿样本和成千上万的特征，那么该方法的计算复杂度就太高了。因此，需要对算法进行改进，我们每次更新回归系数(最优参数)的时候，能不能不用所有样本呢？一次只用一个样本点去更新回归系数(最优参数)？这样就可以有效减少计算量了，这种方法就叫做随机梯度上升算法。
+
+5.4.1 随机梯度上升算法代码：
+def stocGradAscent1(dataMatrix, classLabels, numIter=150):
+    #返回dataMatrix的大小。m为行数,n为列数。
+    m,n = np.shape(dataMatrix)                                                
+    #参数初始化
+    weights = np.ones(n)                                                       
+    for j in range(numIter):                                           
+        dataIndex = list(range(m))
+        #降低alpha的大小，每次减小1/(j+i)。
+        for i in range(m):           
+            alpha = 4/(1.0+j+i)+0.01    
+            #随机选取样本                                        
+            randIndex = int(random.uniform(0,len(dataIndex)))      
+            #选择随机选取的一个样本，计算h          
+            h = sigmoid(sum(dataMatrix[randIndex]*weights))                    
+             #计算误差   
+            error = classLabels[randIndex] - h  
+            #更新回归系数                         
+            weights = weights + alpha * error * dataMatrix[randIndex]      
+            #删除已经使用的样本
+            del(dataIndex[randIndex])                                         
+    #返回
+    return weights                                                      
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+改进之处： 
+（一） 
+alpha在每次迭代的时候都会进行调整，虽然每次都会减小，但是不会减小到0，因为此处有常数项。
+
+如果需要处理的问题是动态变化的，那么可以适当加大上述常数项，来确保新的值获得更大的回归系数。
+
+alpha减少的过程中，每次减小1/(j+i)，其中j为迭代次数，i为样本点的下标。
+
+（二）
+
+更新回归系数时，只使用一个样本点，并且选择的样本点是随机的，每次迭代不使用已经用过的样本点，减小了计算量，并且保证了回归效果。
+
+改进的随机梯度上升算法：
+
+import matplotlib.pylab as plt
+import numpy as np
+import random
+"""
+函数说明：加载数据
+
+"""
+def loadDataSet():
+    # 创建数据列表
+    dataMat=[]
+    # 创建标签列表
+    labelMat=[]
+    # 打开文件
+    fr=open('testSet.txt')
+    # 逐行读取
+    for line in fr.readlines():
+        # 去回车，放入列表
+        lineArr=line.strip().split()
+        # 添加数据
+        dataMat.append([1.0,float(lineArr[0]),float(lineArr[1])])
+        # 添加标签
+        labelMat.append(int(lineArr[2]))
+    # 关闭文件
+    fr.close()
+    return dataMat,labelMat
+
+"""
+函数说明：sigmoid函数
+
+"""
+def sigmoid(inX):
+    return 1.0/(1+np.exp(-inX))
+
+
+"""
+函数说明：梯度上升算法
+
+"""
+def gradAscent(dataMatIn,classLabels):
+    #转化成numpy的mat
+    dataMatrix=np.mat(dataMatIn)
+    # 转化成numpy的mat，并进行转置
+    labelMat=np.mat(classLabels).transpose()
+    #返回dataMatrix的大小，m为行，n为列
+    m,n=np.shape(dataMatrix)
+    #移动步长，也就是学习速率，控制参数更新的速度
+    alpha=0.001
+    #最大迭代次数
+    maxCycles=500
+    weights=np.ones((n,1))
+
+    for k in range(maxCycles):
+        #梯度上升矢量化公式
+        h=sigmoid(dataMatrix*weights)
+        error=labelMat-h
+        weights=weights+alpha*dataMatrix.transpose()*error
+    #将矩阵转化为数组，并返回权重参数
+    return weights.getA()
+
+"""
+函数说明：绘制数据集
+
+"""
+def plotBestFit(weights):
+    #加载数据集
+    dataMat,labelMat=loadDataSet()
+    dataArr=np.array(dataMat)
+    #数据个数
+    n=np.shape(dataMat)[0]
+    #正样本
+    xcord1=[]
+    ycord1=[]
+    #负样本
+    xcord2=[]
+    ycord2=[]
+    #根据数据集标签进行分类
+    for i in range(n):
+        #1为正样本
+        if int(labelMat[i])==1:
+            xcord1.append(dataArr[i,1])
+            ycord1.append(dataArr[i,2])
+        #0为负样本
+        else:
+            xcord2.append(dataArr[i,1])
+            ycord2.append(dataArr[i,2])
+    fig = plt.figure()
+    # 添加subplot
+    ax = fig.add_subplot(111)
+    # 绘制正样本
+    ax.scatter(xcord1, ycord1, s=20, c='red', marker='s', alpha=.5)
+    # 绘制负样本
+    ax.scatter(xcord2, ycord2, s=20, c='green', alpha=.5)
+
+    x=np.arange(-3.0,3.0,0.1)
+
+    y=(-weights[0]-weights[1]*x)/weights[2]
+
+    ax.plot(x,y)
+
+    plt.title('BestFit')
+    plt.xlabel('X1')
+    plt.ylabel('X2')
+    plt.show()
+
+"""
+函数说明：改进的随机梯度上升算法
+
+"""
+def stocGradAscent1(dataMatix,classLabels,numIter=500):
+    m,n=np.shape(dataMatix)
+    weights=np.ones(n)
+    for j in range(numIter):
+        dataIndex=list(range(m))
+        for i in range(m):
+            #降低alpha的大小
+            alpha=4/(1.0+j+i)+0.01
+            #随机选取样本
+            randIndex=int(random.uniform(0,len(dataIndex)))
+            #选择随机选取的样本，计算h
+            h=sigmoid(sum(dataMatix[randIndex]*weights))
+            #计算误差
+            error=classLabels[randIndex]-h
+            #更新回归系数
+            weights=weights+alpha*error*dataMatix[randIndex]
+            #删除已经使用的样本
+            del(dataIndex[randIndex])
+    return weights
+
+if __name__=='__main__':
+    dataMat,labelMat=loadDataSet()
+    weights=gradAscent(dataMat,labelMat)
+    plotBestFit(weights)
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+结果： 
+这里写图片描述
+
+5.4.2 回归系数与迭代次数的关系
+import matplotlib.pylab as plt
+import numpy as np
+import random
+from matplotlib.font_manager import FontProperties
+
+"""
+函数说明：加载数据
+
+"""
+def loadDataSet():
+    # 创建数据列表
+    dataMat=[]
+    # 创建标签列表
+    labelMat=[]
+    # 打开文件
+    fr=open('testSet.txt')
+    # 逐行读取
+    for line in fr.readlines():
+        # 去回车，放入列表
+        lineArr=line.strip().split()
+        # 添加数据
+        dataMat.append([1.0,float(lineArr[0]),float(lineArr[1])])
+        # 添加标签
+        labelMat.append(int(lineArr[2]))
+    # 关闭文件
+    fr.close()
+    return dataMat,labelMat
+
+"""
+函数说明：sigmoid函数
+
+"""
+def sigmoid(inX):
+    return 1.0/(1+np.exp(-inX))
+
+
+"""
+函数说明：梯度上升算法
+
+"""
+def gradAscent(dataMatIn,classLabels):
+    #转化成numpy的mat
+    dataMatrix=np.mat(dataMatIn)
+    # 转化成numpy的mat，并进行转置
+    labelMat=np.mat(classLabels).transpose()
+    #返回dataMatrix的大小，m为行，n为列
+    m,n=np.shape(dataMatrix)
+    #移动步长，也就是学习速率，控制参数更新的速度
+    alpha=0.01
+    #最大迭代次数
+    maxCycles=500
+    weights=np.ones((n,1))
+    weights_array = np.array([])
+    for k in range(maxCycles):
+        #梯度上升矢量化公式
+        h=sigmoid(dataMatrix*weights)
+        error=labelMat-h
+        weights=weights+alpha*dataMatrix.transpose()*error
+        weights_array = np.append(weights_array, weights)
+    weights_array = weights_array.reshape(maxCycles, n)
+    #将矩阵转化为数组，并返回权重参数
+    return weights.getA(),weights_array
+
+"""
+函数说明：绘制数据集
+
+"""
+def plotBestFit(weights):
+    #加载数据集
+    dataMat,labelMat=loadDataSet()
+    dataArr=np.array(dataMat)
+    #数据个数
+    n=np.shape(dataMat)[0]
+    #正样本
+    xcord1=[]
+    ycord1=[]
+    #负样本
+    xcord2=[]
+    ycord2=[]
+    #根据数据集标签进行分类
+    for i in range(n):
+        #1为正样本
+        if int(labelMat[i])==1:
+            xcord1.append(dataArr[i,1])
+            ycord1.append(dataArr[i,2])
+        #0为负样本
+        else:
+            xcord2.append(dataArr[i,1])
+            ycord2.append(dataArr[i,2])
+    fig = plt.figure()
+    # 添加subplot
+    ax = fig.add_subplot(111)
+    # 绘制正样本
+    ax.scatter(xcord1, ycord1, s=20, c='red', marker='s', alpha=.5)
+    # 绘制负样本
+    ax.scatter(xcord2, ycord2, s=20, c='green', alpha=.5)
+
+    x=np.arange(-3.0,3.0,0.1)
+
+    y=(-weights[0]-weights[1]*x)/weights[2]
+
+    ax.plot(x,y)
+
+    plt.title('BestFit')
+    plt.xlabel('X1')
+    plt.ylabel('X2')
+    plt.show()
+
+"""
+函数说明：改进的随机梯度上升算法
+
+"""
+def stocGradAscent1(dataMatix,classLabels,numIter=150):
+    m,n=np.shape(dataMatix)
+    weights=np.ones(n)
+    weights_array=np.array([])
+    for j in range(numIter):
+        dataIndex=list(range(m))
+        for i in range(m):
+            #降低alpha的大小
+            alpha=4/(1.0+j+i)+0.01
+            #随机选取样本
+            randIndex=int(random.uniform(0,len(dataIndex)))
+            #选择随机选取的样本，计算h
+            h=sigmoid(sum(dataMatix[randIndex]*weights))
+            #计算误差
+            error=classLabels[randIndex]-h
+            #更新回归系数
+            weights=weights+alpha*error*dataMatix[randIndex]
+            #添加回归系数到数组中
+            weights_array=np.append(weights_array,weights,axis=0)
+            #删除已经使用的样本
+            del(dataIndex[randIndex])
+    #改变维度
+    weights_array=weights_array.reshape(numIter*m,n)
+    #返回
+    return weights,weights_array
+
+"""
+函数说明:绘制回归系数与迭代次数的关系
+
+Parameters:
+    weights_array1 - 回归系数数组1
+    weights_array2 - 回归系数数组2
+Returns:
+    无
+Author:
+    Jack Cui
+Blog:
+    http://blog.csdn.net/c406495762
+Zhihu:
+    https://www.zhihu.com/people/Jack--Cui/
+Modify:
+    2017-08-30
+"""
+def plotWeights(weights_array1,weights_array2):
+    #设置汉字格式
+    font = FontProperties(fname=r"c:\windows\fonts\simsun.ttc", size=14)
+    #将fig画布分隔成1行1列,不共享x轴和y轴,fig画布的大小为(13,8)
+    #当nrow=3,nclos=2时,代表fig画布被分为六个区域,axs[0][0]表示第一行第一列
+    fig, axs = plt.subplots(nrows=3, ncols=2,sharex=False, sharey=False, figsize=(20,10))
+    x1 = np.arange(0, len(weights_array1), 1)
+    #绘制w0与迭代次数的关系
+    axs[0][0].plot(x1,weights_array1[:,0])
+    axs0_title_text = axs[0][0].set_title(u'梯度上升算法：回归系数与迭代次数关系',FontProperties=font)
+    axs0_ylabel_text = axs[0][0].set_ylabel(u'W0',FontProperties=font)
+    plt.setp(axs0_title_text, size=20, weight='bold', color='black')
+    plt.setp(axs0_ylabel_text, size=20, weight='bold', color='black')
+    #绘制w1与迭代次数的关系
+    axs[1][0].plot(x1,weights_array1[:,1])
+    axs1_ylabel_text = axs[1][0].set_ylabel(u'W1',FontProperties=font)
+    plt.setp(axs1_ylabel_text, size=20, weight='bold', color='black')
+    #绘制w2与迭代次数的关系
+    axs[2][0].plot(x1,weights_array1[:,2])
+    axs2_xlabel_text = axs[2][0].set_xlabel(u'迭代次数',FontProperties=font)
+    axs2_ylabel_text = axs[2][0].set_ylabel(u'W1',FontProperties=font)
+    plt.setp(axs2_xlabel_text, size=20, weight='bold', color='black')
+    plt.setp(axs2_ylabel_text, size=20, weight='bold', color='black')
+
+
+    x2 = np.arange(0, len(weights_array2), 1)
+    #绘制w0与迭代次数的关系
+    axs[0][1].plot(x2,weights_array2[:,0])
+    axs0_title_text = axs[0][1].set_title(u'改进的随机梯度上升算法：回归系数与迭代次数关系',FontProperties=font)
+    axs0_ylabel_text = axs[0][1].set_ylabel(u'W0',FontProperties=font)
+    plt.setp(axs0_title_text, size=20, weight='bold', color='black')
+    plt.setp(axs0_ylabel_text, size=20, weight='bold', color='black')
+    #绘制w1与迭代次数的关系
+    axs[1][1].plot(x2,weights_array2[:,1])
+    axs1_ylabel_text = axs[1][1].set_ylabel(u'W1',FontProperties=font)
+    plt.setp(axs1_ylabel_text, size=20, weight='bold', color='black')
+    #绘制w2与迭代次数的关系
+    axs[2][1].plot(x2,weights_array2[:,2])
+    axs2_xlabel_text = axs[2][1].set_xlabel(u'迭代次数',FontProperties=font)
+    axs2_ylabel_text = axs[2][1].set_ylabel(u'W1',FontProperties=font)
+    plt.setp(axs2_xlabel_text, size=20, weight='bold', color='black')
+    plt.setp(axs2_ylabel_text, size=20, weight='bold', color='black')
+
+    plt.show()
+
+if __name__ == '__main__':
+    dataMat, labelMat = loadDataSet()
+    weights1,weights_array1 = stocGradAscent1(np.array(dataMat), labelMat)
+
+    weights2,weights_array2 = gradAscent(dataMat, labelMat)
+    plotWeights(weights_array1, weights_array2)
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+这里写图片描述
+
+改进的随机梯度上升算法，随机选取样本点，所以每次运行结果不同，但大体趋势相同。
+
+改进的随机梯度上升算法收敛效果更好：
+
+我们一共有100个样本点，改进的随机梯度上升算法迭代次数为150。而上图显示15000次迭代次数的原因是，使用一次样本就更新一下回归系数。因此，迭代150次，相当于更新回归系数150*100=15000次。简而言之，迭代150次，更新1.5万次回归参数。从上图左侧的改进随机梯度上升算法回归效果中可以看出，其实在更新2000次回归系数的时候，已经收敛了。相当于遍历整个数据集20次的时候，回归系数已收敛。训练已完成。
+
+再让我们看看上图右侧的梯度上升算法回归效果，梯度上升算法每次更新回归系数都要遍历整个数据集。从图中可以看出，当迭代次数为300多次的时候，回归系数才收敛。凑个整，就当它在遍历整个数据集300次的时候已经收敛好了。
+
+改进的随机梯度上升算法，在遍历数据集的第20次开始收敛。而梯度上升算法，在遍历数据集的第300次才开始收敛。
+
+5.5 示例：从疝气病症预测病马的死亡率
+数据报告368个样本和28个特征，数据集包含了马疝病的一些指标，有的指标比较主观，有的指标难以测量，例如马的疼痛级别。
+
+这里写图片描述
+
+处理部分指标主观和难以测量外，该数据还存在一个问题，数据集中有30%的值是缺失的，首先要解决数据缺失问题，再用Logistic回归来预测病马的生死。
+
+5.5.1 准备数据
+若机器上的某个传感器损坏导致一个特征无效时该怎么办？它们是否还可用？答案是肯定的。因为有时候数据相当昂贵，扔掉和重新获取都是不可取的，所以必须采用一些方法来解决这个问题。下面给出了一些可选的做法：
+
+使用可用特征的均值来填补缺失值；
+使用特殊值来填补缺失值，如-1；
+忽略有缺失值的样本；
+使用相似样本的均值添补缺失值；
+使用另外的机器学习算法预测缺失值。
+数据预处理：
+
+如果测试集中一条数据的特征值已经确实，那么我们选择实数0来替换所有缺失值，因为本文使用Logistic回归。因此这样做不会影响回归系数的值。sigmoid(0)=0.5，即它对结果的预测不具有任何倾向性。
+如果测试集中一条数据的类别标签已经缺失，那么我们将该类别数据丢弃，因为类别标签与特征不同，很难确定采用某个合适的值来替换。
+保存为两个文件：horseColicTest.txt和horseColicTraining.txt
+
+5.5.2 使用python构建Logistic回归分类器
+使用Logistic回归方法进行分类并不需要做很多工作，所需做的只是把测试集上每个特征向量乘以最优化方法得来的回归系数，再将乘积结果求和，最后输入到Sigmoid函数中即可。如果对应的Sigmoid值大于0.5就预测类别标签为1，否则为0。
+
+import numpy as np
+import random
+
+"""
+函数说明：sigmoid函数
+"""
+def sigmoid(inX):
+    return 1.0/(1+np.exp(-inX))
+
+"""
+函数说明：改进的梯度上升算法
+
+"""
+def stocGradAscent1(dataMatix,classLabels,numIter=500):
+    m,n=np.shape(dataMatix)
+    weights=np.ones(n)
+    for j in range(numIter):
+        dataIndex=list(range(m))
+        for i in range(m):
+            #降低alpha的大小
+            alpha=4/(1.0+j+i)+0.01
+            #随机选取样本
+            randIndex=int(random.uniform(0,len(dataIndex)))
+            #选择随机选取的样本，计算h
+            h=sigmoid(sum(dataMatix[randIndex]*weights))
+            #计算误差
+            error=classLabels[randIndex]-h
+            #更新回归系数
+            weights=weights+alpha*error*dataMatix[randIndex]
+            #删除已经使用的样本
+            del(dataIndex[randIndex])
+    return weights
+
+
+"""
+函数说明：使用python写的Logistic分类器做预测
+
+"""
+def colicTest():
+    frTrain=open('horseColicTraining.txt')
+    frTest=open('horseColicTest.txt')
+    trainingSet=[]
+    trainingLabels=[]
+    for line in frTrain.readlines():
+        currLine = line.strip().split('\t')
+        lineArr = []
+        for i in range(len(currLine) - 1):
+            lineArr.append(float(currLine[i]))
+            trainingSet.append(lineArr)
+            trainingLabels.append(float(currLine[-1]))
+
+    # 使用改进的随即上升梯度训练
+    trainWeights = stocGradAscent1(np.array(trainingSet), trainingLabels, 500)
+    errorCount = 0
+    numTestVec = 0.0
+    for line in frTest.readlines():
+        numTestVec += 1.0
+        currLine = line.strip().split('\t')
+        lineArr = []
+        for i in range(len(currLine) - 1):
+            lineArr.append(float(currLine[i]))
+        if int(classifyVector(np.array(lineArr), trainWeights)) != int(currLine[-1]):
+            errorCount += 1
+    errorRate = (float(errorCount) / numTestVec) * 100  # 错误率计算
+    print("测试集错误率为: %.2f%%" % errorRate)
+
+"""
+函数说明：分类函数
+
+"""
+def classifyVector(inX, weights):
+    prob = sigmoid(sum(inX*weights))
+    if prob > 0.5: return 1.0
+    else: return 0.0
+
+if __name__ == '__main__':
+    colicTest()
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+结果：
+
+测试集错误率为: 28.36%
+1
+错误率较高，运行时间较长，且每次的错误率不稳定，原因是数据集本身有30%的数据缺失，另一个原因是改进的随机梯度上升算法，因为数据集本身就很小，所以用随机梯度上升不太合适。
+
+使用梯度上升算法：
+
+import matplotlib.pylab as plt
+import numpy as np
+import random
+"""
+函数说明：加载数据
+
+"""
+def loadDataSet():
+    # 创建数据列表
+    dataMat=[]
+    # 创建标签列表
+    labelMat=[]
+    # 打开文件
+    fr=open('testSet.txt')
+    # 逐行读取
+    for line in fr.readlines():
+        # 去回车，放入列表
+        lineArr=line.strip().split()
+        # 添加数据
+        dataMat.append([1.0,float(lineArr[0]),float(lineArr[1])])
+        # 添加标签
+        labelMat.append(int(lineArr[2]))
+    # 关闭文件
+    fr.close()
+    return dataMat,labelMat
+
+"""
+函数说明：sigmoid函数
+
+"""
+def sigmoid(inX):
+    return 1.0/(1+np.exp(-inX))
+
+
+"""
+函数说明：梯度上升算法
+
+"""
+def gradAscent(dataMatIn,classLabels):
+    #转化成numpy的mat
+    dataMatrix=np.mat(dataMatIn)
+    # 转化成numpy的mat，并进行转置
+    labelMat=np.mat(classLabels).transpose()
+    #返回dataMatrix的大小，m为行，n为列
+    m,n=np.shape(dataMatrix)
+    #移动步长，也就是学习速率，控制参数更新的速度
+    alpha=0.001
+    #最大迭代次数
+    maxCycles=500
+    weights=np.ones((n,1))
+
+    for k in range(maxCycles):
+        #梯度上升矢量化公式
+        h=sigmoid(dataMatrix*weights)
+        error=labelMat-h
+        weights=weights+alpha*dataMatrix.transpose()*error
+    #将矩阵转化为数组，并返回权重参数
+    return weights.getA()
+
+"""
+函数说明：使用python写的Logistic分类器做预测
+
+"""
+def colicTest():
+    frTrain=open('horseColicTraining.txt')
+    frTest=open('horseColicTest.txt')
+    trainingSet=[]
+    trainingLabels=[]
+    for line in frTrain.readlines():
+        currLine = line.strip().split('\t')
+        lineArr = []
+        for i in range(len(currLine) - 1):
+            lineArr.append(float(currLine[i]))
+            trainingSet.append(lineArr)
+            trainingLabels.append(float(currLine[-1]))
+
+    # 使用改进的随即上升梯度训练
+    trainWeights = gradAscent(np.array(trainingSet), trainingLabels)
+    errorCount = 0
+    numTestVec = 0.0
+    for line in frTest.readlines():
+        numTestVec += 1.0
+        currLine = line.strip().split('\t')
+        lineArr = []
+        for i in range(len(currLine) - 1):
+            lineArr.append(float(currLine[i]))
+        if int(classifyVector(np.array(lineArr), trainWeights[:,0])) != int(currLine[-1]):
+            errorCount += 1
+    errorRate = (float(errorCount) / numTestVec) * 100  # 错误率计算
+    print("测试集错误率为: %.2f%%" % errorRate)
+
+"""
+函数说明：分类函数
+
+"""
+def classifyVector(inX, weights):
+    prob = sigmoid(sum(inX*weights))
+    if prob > 0.5: return 1.0
+    else: return 0.0
+
+if __name__ == '__main__':
+    colicTest()
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+结果：
+
+测试集错误率为: 29.85%
+1
+结论：
+
+使用梯度上升法时间更短，且错误率更稳定
+
+使用两个不同算法的场合：
+
+1）数据集较小时，采用梯度上升算法 
+2）数据集较大时，采用随机梯度上升算法
+
+5.6 使用sklearn构建Logistic回归分类器
+官方文档
+
+5.6.1 函数说明
+class sklearn.linear_model.LogisticRegression(penalty=’l2’, dual=False, tol=0.0001, C=1.0, fit_intercept=True, intercept_scaling=1, class_weight=None, random_state=None, solver=’liblinear’, max_iter=100, multi_class=’ovr’, verbose=0, warm_start=False, n_jobs=1)
+1
+该函数有14个参数，参数说明如下：
+
+penalty：惩罚项，str类型，可选参数为l1和l2，默认为l2。用于指定惩罚项中使用的规范。newton-cg、sag和lbfgs求解算法只支持L2规范。L1G规范假设的是模型的参数满足拉普拉斯分布，L2假设的模型参数满足高斯分布，所谓的范式就是加上对参数的约束，使得模型更不会过拟合(overfit)，但是如果要说是不是加了约束就会好，这个没有人能回答，只能说，加约束的情况下，理论上应该可以获得泛化能力更强的结果。
+dual：对偶或原始方法，bool类型，默认为False。对偶方法只用在求解线性多核(liblinear)的L2惩罚项上。当样本数量>样本特征的时候，dual通常设置为False。
+tol：停止求解的标准，float类型，默认为1e-4。就是求解到多少的时候，停止，认为已经求出最优解。
+c：正则化系数λ的倒数，float类型，默认为1.0。必须是正浮点型数。像SVM一样，越小的数值表示越强的正则化。
+fit_intercept：是否存在截距或偏差，bool类型，默认为True。
+intercept_scaling：仅在正则化项为”liblinear”，且fit_intercept设置为True时有用。float类型，默认为1。
+class_weight：用于标示分类模型中各种类型的权重，可以是一个字典或者balanced字符串，默认为不输入，也就是不考虑权重，即为None。
+
+如果选择输入的话，可以选择balanced让类库自己计算类型权重，或者自己输入各个类型的权重。举个例子，比如对于0,1的二元模型，我们可以定义class_weight={0:0.9,1:0.1}，这样类型0的权重为90%，而类型1的权重为10%。
+如果class_weight选择balanced，那么类库会根据训练样本量来计算权重。某种类型样本量越多，则权重越低，样本量越少，则权重越高。
+当class_weight为balanced时，类权重计算方法如下：n_samples / (n_classes *
+np.bincount(y))。n_samples为样本数，n_classes为类别数量，np.bincount(y)会输出每个类的样本数，例如y=[1,0,0,1,1],则np.bincount(y)=[2,3]。
+那么class_weight有什么作用呢？ 在分类模型中，我们经常会遇到两类问题：
+第一种是误分类的代价很高。比如对合法用户和非法用户进行分类，将非法用户分类为合法用户的代价很高，我们宁愿将合法用户分类为非法用户，这时可以人工再甄别，但是却不愿将非法用户分类为合法用户。这时，我们可以适当提高非法用户的权重。
+第二种是样本是高度失衡的，比如我们有合法用户和非法用户的二元样本数据10000条，里面合法用户有9995条，非法用户只有5条，如果我们不考虑权重，则我们可以将所有的测试集都预测为合法用户，这样预测准确率理论上有99.95%，但是却没有任何意义。这时，我们可以选择balanced，让类库自动提高非法用户样本的权重。提高了某种分类的权重，相比不考虑权重，会有更多的样本分类划分到高权重的类别，从而可以解决上面两类问题。
+random_state：随机数种子，int类型，可选参数，默认为无，仅在正则化优化算法为sag,liblinear时有用。
+
+solver：优化算法选择参数，只有五个可选参数，即newton-cg,lbfgs,liblinear,sag,saga。默认为liblinear。solver参数决定了我们对逻辑回归损失函数的优化方法，有四种算法可以选择，分别是：
+liblinear：使用了开源的liblinear库实现，内部使用了坐标轴下降法来迭代优化损失函数。
+lbfgs：拟牛顿法的一种，利用损失函数二阶导数矩阵即海森矩阵来迭代优化损失函数。
+newton-cg：也是牛顿法家族的一种，利用损失函数二阶导数矩阵即海森矩阵来迭代优化损失函数。
+sag：即随机平均梯度下降，是梯度下降法的变种，和普通梯度下降法的区别是每次迭代仅仅用一部分的样本来计算梯度，适合于样本数据多的时候。
+saga：线性收敛的随机优化算法的的变重。
+总结：
+
+liblinear适用于小数据集，而sag和saga适用于大数据集因为速度更快。
+
+对于多分类问题，只有newton-cg,sag,saga和lbfgs能够处理多项损失，而liblinear受限于一对剩余(OvR)。啥意思，就是用liblinear的时候，如果是多分类问题，得先把一种类别作为一个类别，剩余的所有类别作为另外一个类别。一次类推，遍历所有类别，进行分类。
+
+newton-cg,sag和lbfgs这三种优化算法时都需要损失函数的一阶或者二阶连续导数，因此不能用于没有连续导数的L1正则化，只能用于L2正则化。而liblinear和saga通吃L1正则化和L2正则化。
+
+同时，sag每次仅仅使用了部分样本进行梯度迭代，所以当样本量少的时候不要选择它，而如果样本量非常大，比如大于10万，sag是第一选择。但是sag不能用于L1正则化，所以当你有大量的样本，又需要L1正则化的话就要自己做取舍了。要么通过对样本采样来降低样本量，要么回到L2正则化。
+
+从上面的描述，大家可能觉得，既然newton-cg, lbfgs和sag这么多限制，如果不是大样本，我们选择liblinear不就行了嘛！错，因为liblinear也有自己的弱点！我们知道，逻辑回归有二元逻辑回归和多元逻辑回归。对于多元逻辑回归常见的有one-vs-rest(OvR)和many-vs-many(MvM)两种。而MvM一般比OvR分类相对准确一些。郁闷的是liblinear只支持OvR，不支持MvM，这样如果我们需要相对精确的多元逻辑回归时，就不能选择liblinear了。也意味着如果我们需要相对精确的多元逻辑回归不能使用L1正则化了。
+
+max_iter：算法收敛最大迭代次数，int类型，默认为10。仅在正则化优化算法为newton-cg, sag和lbfgs才有用，算法收敛的最大迭代次数。
+
+multi_class：分类方式选择参数，str类型，可选参数为ovr和multinomial，默认为ovr。ovr即前面提到的one-vs-rest(OvR)，而multinomial即前面提到的many-vs-many(MvM)。如果是二元逻辑回归，ovr和multinomial并没有任何区别，区别主要在多元逻辑回归上。
+
+OvR和MvM有什么不同？
+
+OvR的思想很简单，无论你是多少元逻辑回归，我们都可以看做二元逻辑回归。具体做法是，对于第K类的分类决策，我们把所有第K类的样本作为正例，除了第K类样本以外的所有样本都作为负例，然后在上面做二元逻辑回归，得到第K类的分类模型。其他类的分类模型获得以此类推。
+
+MvM则相对复杂，这里举MvM的特例one-vs-one(OvO)作讲解。如果模型有T类，我们每次在所有的T类样本里面选择两类样本出来，不妨记为T1类和T2类，把所有的输出为T1和T2的样本放在一起，把T1作为正例，T2作为负例，进行二元逻辑回归，得到模型参数。我们一共需要T(T-1)/2次分类。
+
+可以看出OvR相对简单，但分类效果相对略差（这里指大多数样本分布情况，某些样本分布下OvR可能更好）。而MvM分类相对精确，但是分类速度没有OvR快。如果选择了ovr，则4种损失函数的优化方法liblinear，newton-cg,lbfgs和sag都可以选择。但是如果选择了multinomial,则只能选择newton-cg, lbfgs和sag了。
+
+verbose：日志冗长度，int类型。默认为0。就是不输出训练过程，1的时候偶尔输出结果，大于1，对于每个子模型都输出。
+
+warm_start：热启动参数，bool类型。默认为False。如果为True，则下一次训练是以追加树的形式进行（重新使用上一次的调用作为初始化）。
+
+n_jobs：并行数。int类型，默认为1。1的时候，用CPU的一个内核运行程序，2的时候，用CPU的2个内核运行程序。为-1的时候，用所有CPU的内核运行程序。
+
+LogisticRegression的方法： 
+这里写图片描述
+
+5.6.2 使用sklearn构建分类器
+代码如下：
+
+from sklearn.linear_model import LogisticRegression
+
+"""
+函数说明：使用sklearn构建logistics分类器
+
+"""
+def colicSklearn():
+    frTrain=open('horseColicTraining.txt')
+    frTest=open(('horseColicTest.txt'))
+    trainingSet=[]
+    trainingLabels=[]
+    testSet=[]
+    testLabels=[]
+
+    for line in frTrain.readlines():
+        currLine=line.strip().split('\t')
+        lineArr=[]
+        for i in range(len(currLine)-1):
+            lineArr.append(float(currLine[i]))
+        trainingSet.append(lineArr)
+        trainingLabels.append(float(currLine[-1]))
+
+    for line in frTest.readlines():
+        currLine=line.strip().split('\t')
+        lineArr=[]
+        for i in range(len(currLine)-1):
+            lineArr.append(float(currLine[i]))
+        testSet.append(lineArr)
+        testLabels.append(float(currLine[-1]))
+
+    classifier=LogisticRegression(solver='liblinear',max_iter=10).fit(trainingSet,trainingLabels)
+    test_accuracy=classifier.score(testSet,testLabels)*100
+    print('正确率：%f%%' % test_accuracy)
+
+if __name__=='__main__':
+    colicSklearn()
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+结果：
+
+正确率：73.134328%
+1
+更改solver参数，设置为sag，使用随机平均梯度下降法，可以看到正确率提高，但是出现了警告： 
+这里写图片描述
+
+说明算法还没有收敛，可以将迭代次数改为5000，再次运行：
+
+ classifier=LogisticRegression(solver='sag',max_iter=5000).fit(trainingSet,trainingLabels)
+1
+结果： 
+这里写图片描述
+
+5.7 Logistic算法总结
+5.7.1 优缺点
+优点：实现简单，易于理解，计算代价不高，速度快，存储资源低
+缺点：容易欠拟合，分类精度不高
+这里写图片描述
+
+5.8 系统介绍
+5.8.1 逻辑斯蒂分布
+设X是连续随机变量，X服从逻辑斯蒂分布是指X具有下列的分布函数和密度函数：
+
+这里写图片描述
+
+上式中，μ表示位置参数，γ>0 为形状参数。 
+这里写图片描述
+
+逻辑斯蒂分布函数就是一个sigmoid曲线，以(μ,12)为中心对称，形状参数γ的值越小，曲线在中心附近增长越快。
+
+5.8.2 二项逻辑回归
+逻辑回归是一种二分类模型，由条件概率分布P(Y|X)表示，形式就是参数化的逻辑斯蒂分布。这里自变量X的取值为实数，因变量Y为0或1，二项LR的条件概率如下： 
+这里写图片描述 
+这里写图片描述
+
+也就是说，输出Y=1 的对数几率是由输入x的线性函数表示的模型，这就是 逻辑回归模型。当 w⋅x的值越接近正无穷，P(Y=1|x) 概率值也就越接近1。
+
+实际上，对数似然损失在单个数据点上的定义为： 
+这里写图片描述
+
+如果取整个数据集上的平均对数似然损失，我们恰好可以得到: 
+这里写图片描述
+
+接下来就是对L(w) 求极大值(也可认为是求J(w) 的最小值)，得到w 的估计值。逻辑回归学习中通常采用的方法是梯度下降法 和 牛顿法。
+
+5.8.3 逻辑回归的正则化
+当模型参数过多时，会产生过拟合问题，正则化是通过在经验风险上加一个正则化项，来惩罚过大的参数来防止过拟合。
+
+正则化是符合奥卡姆剃刀(Occam’s razor)原理的：在所有可能选择的模型中，能够很好地解释已知数据并且十分简单的才是最好的模型。
+
+这里写图片描述
+
+最右边的图就是overfitting，参数过多，导致在训练集上的效果过于优秀，丧失了一般性，总而言之f(x)多项式的N特别的大，因为需要提供的特征多，或者提供的测试用例中我们使用到的特征非常多(一般而言，机器学习的过程中，很多特征是可以被丢弃掉的)。典型的做法就是在优化目标中加入正则项：
+
+这里写图片描述
+
+p=1或者2，表示L 1 范数和 L 2 范数，这两者还是有不同效果的。
+
+通过惩罚过大的参数来防止过拟合，也就是使得w向量中项的个数最小，所以要损失函数和正则项同时最小，最终是让两者之和最小。
+
+一、L0范数与L1范数
+
+L0范数：向量中非0元素的个数，如果用L0范数来规范化一个参数矩阵的话，就是希望w的大部分元素都是0，也就是希望参数w是稀疏的。但是L0范数难以优化求解，故基本不用。
+
+L1范数：向量中各个元素的绝对值之和，也叫“稀疏规则算子（Lasso Regularization）”，比L0具有更好的优化求解特性。
+
+为什么要让参数稀疏化呢？
+
+（1）特征选择：
+
+稀疏规则和效果好的一个关键原因在于它能够实现特征的自动选择，一般来说，xi的大部分元素（也就是特征）都是和最终的输出yi没有关系或者不提供任何信息的，在最小化目标函数的时候考虑xi这些额外的特征，虽然可以获得更小的训练误差，但在预测新的样本时，这些没用的信息反而会被考虑，从而干扰了对正确yi的预测。稀疏规则化算子的引入就是为了完成特征自动选择的光荣使命，它会学习地去掉这些没有信息的特征，也就是把这些特征对应的权重置为0。
+
+（2）可解释性：
+
+另一个青睐于稀疏的理由是，模型更容易解释。例如患某种病的概率是y，然后我们收集到的数据x是1000维的，也就是我们需要寻找这1000种因素到底是怎么影响患上这种病的概率的。假设我们这个是个回归模型：y=w1*x1+w2*x2+…+w1000*x1000+b（当然了，为了让y限定在[0,1]的范围，一般还得加个Logistic函数）。通过学习，如果最后学习到的w*就只有很少的非零元素，例如只有5个非零的wi，那么我们就有理由相信，这些对应的特征在患病分析上面提供的信息是巨大的，决策性的。也就是说，患不患这种病只和这5个因素有关，那医生就好分析多了
+
+二、L2范数
+
+除了L1范数，还有一种更受宠幸的规则化范数是L2范数: ||W||2。它也不逊于L1范数，它有两个美称，在回归里面，有人把有它的回归叫“岭回归”（Ridge Regression），有人也叫它“权值衰减weight decay”。这用的很多吧，因为它的强大功效是改善机器学习里面一个非常重要的问题：过拟合。
+
+L2范数是指向量各元素的平方和然后求平方根。我们让L2范数的规则项||W||2最小，可以使得W的每个元素都很小，都接近于0，但与L1范数不同，它不会让它等于0，而是接近于0，这里是有很大的区别的哦。而越小的参数说明模型越简单，越简单的模型则越不容易产生过拟合现象，因为参数小，对结果的影响就小了。
+
+L2正则化是在目标函数中增加所有权重参数的平方和，使得所有的w尽可能的趋于0但不为0，因为过拟合的时候，拟合函数需要顾忌每一个点，最终形成的拟合函数波动很大， 在某些小区间里，函数值的变化很距离，也就是w非常大，所以，L2正则化就很大程度上抑制了w变化的速率，也就是权重变化太快的趋势。
+
+通过L2范数，我们可以实现了对模型空间的限制，从而在一定程度上避免了过拟合。
+
+因此，一句话总结就是：L1会趋向于产生少量的特征，而其他的特征都是0，而L2会选择更多的特征，这些特征都会接近于0。Lasso在特征选择时候非常有用，而Ridge就只是一种规则化而已。 
+这里写图片描述
+
+为了简单，上图只考虑了w 为二维(w 1 ,w 2 ) 的情况。彩色等高线是(w 1 ,w 2 ) ；而左边黑色矩形 ||w|| 1
+
+5.8.4 为什么逻辑回归比线性回归好
+虽然逻辑回归能够用于分类，不过其本质还是线性回归。它仅在线性回归的基础上，在特征到结果的映射中加入了一层sigmoid函数（非线性）映射，即先把特征线性求和，然后使用sigmoid函数来预测。
+
+这主要是由于线性回归在整个实数域内敏感度一致，而分类范围，需要在[0,1]之内。而逻辑回归就是一种减小预测范围，将预测值限定为[0,1]间的一种回归模型，其回归方程与回归曲线如下图所示。逻辑曲线在z=0时，十分敏感，在z>>0或z<<0处，都不敏感，将预测值限定为(0,1)。
+
+LR在线性回归的实数范围输出值上施加sigmoid函数将值收敛到0~1范围, 其目标函数也因此从差平方和函数变为对数损失函数, 以提供最优化所需导数（sigmoid函数是softmax函数的二元特例, 其导数均为函数值的f*(1-f)形式）。请注意, LR往往是解决二元0/1分类问题的, 只是它和线性回归耦合太紧, 不自觉也冠了个回归的名字(马甲无处不在). 若要求多元分类,就要把sigmoid换成大名鼎鼎的softmax了。
+首先逻辑回归和线性回归首先都是广义的线性回归，其次经典线性模型的优化目标函数是最小二乘，而逻辑回归则是似然函数，另外线性回归在整个实数域范围内进行预测，敏感度一致，而分类范围，需要在[0,1]。逻辑回归就是一种减小预测范围，将预测值限定为[0,1]间的一种回归模型，因而对于这类问题来说，逻辑回归的鲁棒性比线性回归的要好。
+逻辑回归的模型本质上是一个线性回归模型，逻辑回归都是以线性回归为理论支持的。但线性回归模型无法做到sigmoid的非线性形式，sigmoid可以轻松处理0/1分类问题。
+5.8.5 其他降低过拟合的方法
+随机失活：dropout
+
+让神经元以超参数p的概率被激活(也就是1-p的概率被设置为0), 每个w因此随机参与, 使得任意w都不是不可或缺的, 效果类似于数量巨大的模型集成。
+
+逐层归一化 
+这个方法给每层的输出都做一次归一化(网络上相当于加了一个线性变换层), 使得下一层的输入接近高斯分布. 这个方法相当于下一层的w训练时避免了其输入以偏概全, 因而泛化效果非常好.
+
+提前终止：early stopping 
+理论上可能的局部极小值数量随参数的数量呈指数增长, 到达某个精确的最小值是不良泛化的一个来源. 实践表明, 追求细粒度极小值具有较高的泛化误差。这是直观的，因为我们通常会希望我们的误差函数是平滑的, 精确的最小值处所见相应误差曲面具有高度不规则性, 而我们的泛化要求减少精确度去获得平滑最小值, 所以很多训练方法都提出了提前终止策略. 典型的方法是根据交叉叉验证提前终止: 若每次训练前, 将训练数据划分为若干份, 取一份为测试集, 其他为训练集, 每次训练完立即拿此次选中的测试集自测. 因为每份都有一次机会当测试集, 所以此方法称之为交叉验证. 交叉验证的错误率最小时可以认为泛化性能最好, 这时候训练错误率虽然还在继续下降, 但也得终止继续训练了.
+
+5.8.6 LR和SVM的联系与区别
+1、LR和SVM都可以处理分类问题，且一般都用于处理线性二分类问题（在改进的情况下可以处理多分类问题）
+
+2、两个方法都可以增加不同的正则化项，如l1、l2等等。所以在很多实验中，两种算法的结果是很接近的。
+
+区别：
+
+1、LR是参数模型，SVM是非参数模型。
+
+2、从目标函数来看，区别在于逻辑回归采用的是logistical loss，SVM采用的是hinge loss，这两个损失函数的目的都是增加对分类影响较大的数据点的权重，减少与分类关系较小的数据点的权重。
+
+3、SVM的处理方法是只考虑support vectors，也就是和分类最相关的少数点，去学习分类器。而逻辑回归通过非线性映射，大大减小了离分类平面较远的点的权重，相对提升了与分类最相关的数据点的权重。
+
+4、逻辑回归相对来说模型更简单，好理解，特别是大规模线性分类时比较方便。而SVM的理解和优化相对来说复杂一些，SVM转化为对偶问题后,分类只需要计算与少数几个支持向量的距离,这个在进行复杂核函数计算时优势很明显,能够大大简化模型和计算。
+
+5、logic 能做的 svm能做，但可能在准确率上有问题，svm能做的logic有的做不了。
