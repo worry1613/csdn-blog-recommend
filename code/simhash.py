@@ -8,9 +8,7 @@ import hashlib
 import collections
 import tokenization
 import operator
-import os,sys
-reload(sys)
-sys.setdefaultencoding('utf8')
+
 
 class simhash:
     def __init__(self, content, stopwords, stopflags=['x', 'c', 'u','d', 'p', 't', 'uj', 'm', 'f', 'r'],f=64):
@@ -66,7 +64,7 @@ class simhash:
         if source == "":
             return 0
         else:
-            return int(hashlib.md5(source).hexdigest(), 16)
+            return int(hashlib.md5(source.encode("utf8")).hexdigest(), 16)
 
     def hammingDis(self,o):
         n=self.value ^ o.value
